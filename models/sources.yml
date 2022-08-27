@@ -1,0 +1,82 @@
+version: 2
+
+sources:
+
+  - name: jaffle_shop
+    freshness: 
+        error_after: {count: 6, period: day}
+    tables:
+
+    - name: customers
+      description: This source table contains details about the customers of the jaffle shop
+      columns: 
+        - name: id
+          description: Unique identifier for the customer
+          tests:
+            - not_null
+            - unique
+        - name: first_name
+          description: First name of the customer
+        - name: last_name
+          description: Last name of the customer
+
+    - name: orders
+      description: This source table contains details about the orders in the jaffle shop
+      columns: 
+        - name: id
+          description: Unique identifier for the order
+          tests:
+            - not_null
+            - unique
+        - name: user_id
+          description: Foreign key for the customers tables
+          # tests:
+            # - relationships:
+              # to: source('jaffle_shop','customers')
+              # field: id
+        - name: order_date
+          description: Date of the order
+        - name: status
+          description: Status of the order
+          tests:
+            - accepted_values: 
+                values: ['completed', 'returned', 'return_pending','shipped','placed']
+        - name: _etl_loaded_at
+          description: Provided by the ingestion job that ingest the data into the warehouse
+      freshness: 
+        warn_after: {count: 6, period: day}
+      loaded_at_field: _etl_loaded_at
+      
+
+        
+  - name: stripe
+    tables: 
+      - name: payment
+        description: This table presents the payments in the jaffle shop
+        columns:
+          - name: id
+            description: Unique identifier of the payment 
+            tests:
+              - unique
+              - not_null
+          - name: orderid
+            description: Foreign key to the orders table
+            # tests: 
+              # - relationships:
+                # to: source('jaffle_shop','orders')        
+          - name: paymentmethod
+            description: Payment method used by the customer to pay
+          - name: status
+            description: Status of the payment
+            tests:
+              - accepted_values: 
+                  values: ['success', 'fail']
+          - name: amount
+            description: Amount payed 
+          - name: created
+            description: Date of payment
+          - name: _batched_at
+            description: provided by ingestion job to precise the date of ingestion
+        freshness: 
+          warn_after: {count: 6, period: day}
+        loaded_at_field: _batched_at
